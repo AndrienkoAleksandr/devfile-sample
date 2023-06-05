@@ -15,13 +15,13 @@ parent:
   id: nodejs
   registryUrl: "https://registry.devfile.io"
 components:
-  # - name: image-build
-  #   image:
-  #     imageName: nodejs-image:latest
-  #     dockerfile:
-  #       uri: Dockerfile
-  #       buildContext: .
-  #       rootRequired: false
+  - name: image-build
+    image:
+      imageName: nodejs-image:latest
+      dockerfile:
+        uri: Dockerfile
+        buildContext: .
+        rootRequired: false
   - name: kubernetes-deploy
     attributes:
       deployment/replicas: 1
