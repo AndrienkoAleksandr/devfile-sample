@@ -14,7 +14,8 @@ spec:
     spec:
       containers:
         - name: my-nodejs
-          image: nodejs-image:latest
+          # image: nodejs-image:latest
+          image: docker.io/aandrienko/tekton-api
           ports:
             - name: http
               containerPort: 3001
