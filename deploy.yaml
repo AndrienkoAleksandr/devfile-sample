@@ -38,6 +38,9 @@ spec:
             - name: http
               containerPort: 3001
               protocol: TCP
+            - name: http
+              containerPort: 8080
+              protocol: TCP
           resources:
             requests:
               memory: "50Mi"
