@@ -7,10 +7,12 @@ spec:
   selector:
     matchLabels:
       app: nodejs-app
+      app.kubernetes.io/name: tekton-results-api
   template:
     metadata:
       labels:
         app: nodejs-app
+        app.kubernetes.io/name: tekton-results-api
     spec:
       containers:
         - name: my-nodejs
@@ -183,4 +185,49 @@ spec:
       resources:
         requests:
           storage: 1Gi
-
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/part-of: tekton-results
+    app.kubernetes.io/version: devel
+  name: tekton-results-api-service
+spec:
+  ports:
+  - name: grpc
+    port: 50051
+    protocol: TCP
+    targetPort: 50051
+  - name: server
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  - name: prometheus
+    port: 9090
+    protocol: TCP
+    targetPort: 9090
+  selector:
+    app.kubernetes.io/name: tekton-results-api
+---
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: tekton-results
+  labels:
+    app.kubernetes.io/part-of: tekton-results
+  annotations:
+    openshift.io/host.generated: "true"
+    haproxy.router.openshift.io/hsts_header: "max-age=63072000"
+spec:
+  to:
+    kind: Service
+    name: tekton-results-api-service
+    weight: 100
+  port:
+    # tekton-results now supports both REST and gRPC traffic on same port
+    targetPort: server
+  tls:
+    termination: reencrypt
+    insecureEdgeTerminationPolicy: Redirect
+  wildcardPolicy: None
