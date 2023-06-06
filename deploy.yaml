@@ -17,6 +17,19 @@ spec:
           # image: nodejs-image:latest
           image: docker.io/aandrienko/tekton-api
           # image: docker.io/aandrienko/api
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  key: POSTGRES_USER
+                  name: tekton-results-postgres
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: POSTGRES_PASSWORD
+                  name: tekton-results-postgres
+            - name: DB_NAME
+              value: tekton-results
           ports:
             - name: http
               containerPort: 3001
@@ -78,3 +91,39 @@ data:
 kind: ConfigMap
 metadata:
   name: tekton-results-api-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: tekton-results-postgres
+    app.kubernetes.io/part-of: tekton-results
+    app.kubernetes.io/version: devel
+  name: tekton-results-postgres-service
+spec:
+  ports:
+  - name: postgres
+    port: 5432
+  selector:
+    app.kubernetes.io/name: tekton-results-postgres
+  type: NodePort
+---
+apiVersion: v1
+data:
+  POSTGRES_DB: tekton-results
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/name: tekton-results-postgres
+    app.kubernetes.io/part-of: tekton-results
+    app.kubernetes.io/version: devel
+  name: tekton-results-postgres
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: tekton-results-postgres
+type: Opaque
+data:
+  POSTGRES_USER: YWRtaW4=
+  POSTGRES_PASSWORD: YWRtaW4=
