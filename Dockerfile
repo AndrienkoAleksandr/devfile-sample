@@ -1,23 +1,19 @@
-# Install the app dependencies in a full Node docker image
-FROM registry.access.redhat.com/ubi8/nodejs-16:latest
+# Docker configuration to build Tekton Results apiserver image
+FROM registry.ci.openshift.org/openshift/release:golang-1.18 AS builder
 
-# Copy package.json, and optionally package-lock.json if it exists
-COPY package.json package-lock.json* ./
+WORKDIR /opt/app-root/src
 
-# Install app dependencies
-RUN \
-  if [ -f package-lock.json ]; then npm ci; \
-  else npm install; \
-  fi
+COPY go.mod go.mod
+COPY go.sum go.sum
+COPY vendor/ vendor/
+COPY cmd/ cmd/
+COPY proto/ proto/
+COPY pkg/ pkg/
 
-# Copy the dependencies into a Slim Node docker image
-FROM registry.access.redhat.com/ubi8/nodejs-16-minimal:latest
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o api cmd/api/main.go
 
-# Install app dependencies
-COPY --from=0 /opt/app-root/src/node_modules /opt/app-root/src/node_modules
-COPY . /opt/app-root/src
+FROM registry.access.redhat.com/ubi9-minimal:9.1.0
+COPY --from=builder /opt/app-root/src/api /usr/local/bin/api
+USER 65532:65532
 
-ENV NODE_ENV production
-ENV PORT 3001
-
-CMD ["npm", "start"]
+ENTRYPOINT ["api"]
