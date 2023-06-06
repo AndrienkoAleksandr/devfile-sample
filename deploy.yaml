@@ -18,6 +18,8 @@ spec:
           image: docker.io/aandrienko/tekton-api
           # image: docker.io/aandrienko/api
           env:
+            - name: DB_HOST
+              value: tekton-results-postgres-service.oandriie-tenant.svc.cluster.local
             - name: DB_USER
               valueFrom:
                 secretKeyRef:
