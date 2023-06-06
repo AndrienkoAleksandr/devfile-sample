@@ -77,4 +77,4 @@ data:
     S3_MULTI_PART_SIZE=5242880
 kind: ConfigMap
 metadata:
-  name: api-config
+  name: tekton-results-api-config
