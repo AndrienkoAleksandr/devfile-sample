@@ -19,6 +19,11 @@ spec:
           # image: nodejs-image:latest
           image: docker.io/aandrienko/tekton-api
           # image: docker.io/aandrienko/api
+          args:
+            - -api_addr
+            - tekton-results-api-service.tekton-pipelines.svc.cluster.local:50051
+            - -auth_mode
+            - token
           env:
             - name: DB_HOST
               value: tekton-results-postgres-service.oandriie-tenant.svc.cluster.local
