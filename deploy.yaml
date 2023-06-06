@@ -25,6 +25,14 @@ spec:
             requests:
               memory: "50Mi"
               cpu: "10m"
+          volumeMounts:
+            - mountPath: /etc/tekton/results
+              name: config
+              readOnly: true
+      volumes:
+        - configMap:
+            name: tekton-results-api-config
+          name: config
 ---
 kind: Service
 apiVersion: v1
