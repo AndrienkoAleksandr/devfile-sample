@@ -8,12 +8,12 @@ spec:
   selector:
     matchLabels:
       app: nodejs-app
-      app.kubernetes.io/name: tekton-results-api
+      app.kubernetes.io/name: tekton-results-api-0
   template:
     metadata:
       labels:
         app: nodejs-app
-        app.kubernetes.io/name: tekton-results-api
+        app.kubernetes.io/name: tekton-results-api-0
     spec:
       containers:
         - name: my-nodejs
@@ -40,10 +40,6 @@ spec:
                   name: tekton-results-postgres
             - name: DB_NAME
               value: tekton-results
-          ports:
-            - name: http
-              containerPort: 3001
-              protocol: TCP
           resources:
             requests:
               memory: "50Mi"
@@ -52,10 +48,16 @@ spec:
             - mountPath: /etc/tekton/results
               name: config
               readOnly: true
+            - mountPath: /etc/tls
+              name: tls
+              readOnly: true
       volumes:
         - configMap:
             name: tekton-results-api-config
           name: config
+        - name: tls
+          secret:
+            secretName: tekton-results-tls
 ---
 apiVersion: v1
 data:
@@ -146,13 +148,16 @@ spec:
         app.kubernetes.io/version: devel
     spec:
       containers:
-      - envFrom:
+      - name: postgres
+        env: 
+          - name: PGDATA
+            value: /bitnami/postgresql/data
+        envFrom:
         - configMapRef:
             name: tekton-results-postgres
         - secretRef:
             name: tekton-results-postgres
-        image: bitnami/postgresql@sha256:23b9a21460fefdd83accd0f864e734c88bebc67c86ee752a97b77dd4843907f0
-        name: postgres
+        image: docker.io/bitnami/postgresql:13.10.0
         ports:
         - containerPort: 5432
           name: postgredb
@@ -182,6 +187,8 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: tekton-results-tls
   labels:
     app.kubernetes.io/part-of: tekton-results
     app.kubernetes.io/version: devel
@@ -201,7 +208,7 @@ spec:
     protocol: TCP
     targetPort: 9090
   selector:
-    app.kubernetes.io/name: tekton-results-api
+    app.kubernetes.io/name: tekton-results-api-0
 ---
 kind: Route
 apiVersion: route.openshift.io/v1
