@@ -19,7 +19,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"net"
+	// "net"
 	"net/http"
 	"path"
 	// "time"
@@ -58,7 +58,7 @@ import (
 )
 
 func main() {
-	log.Println("Test2")
+	log.Println("Test3")
 	serverConfig := config.Get()
 
 	log := logger.Get(serverConfig.LOG_LEVEL)
@@ -165,14 +165,14 @@ func main() {
 	// }()
 
 	// Start gRPC server
-	lis, err := net.Listen("tcp", ":"+serverConfig.GRPC_PORT)
-	if err != nil {
-		log.Fatalf("Failed to listen: %v", err)
-	}
-	go func() {
-		log.Infof("gRPC server listening on: %s", serverConfig.GRPC_PORT)
-		log.Fatal(s.Serve(lis))
-	}()
+	// lis, err := net.Listen("tcp", ":"+serverConfig.GRPC_PORT)
+	// if err != nil {
+	// 	log.Fatalf("Failed to listen: %v", err)
+	// }
+	// go func() {
+	// 	log.Infof("gRPC server listening on: %s", serverConfig.GRPC_PORT)
+	// 	log.Fatal(s.Serve(lis))
+	// }()
 
 	// Load REST client TLS cert to connect to the gRPC server
 	if tlsError == nil {
