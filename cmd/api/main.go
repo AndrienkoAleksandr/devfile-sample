@@ -36,9 +36,9 @@ import (
 	// grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
 	// grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
-	prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+	// prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
+	// "github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/tektoncd/results/pkg/api/server/config"
 	"github.com/tektoncd/results/pkg/api/server/logger"
 	v1alpha2 "github.com/tektoncd/results/pkg/api/server/v1alpha2"
@@ -142,9 +142,9 @@ func main() {
 		// ),
 	)
 	v1alpha2pb.RegisterResultsServer(s, v1a2)
-	if serverConfig.LOGS_API {
-		v1alpha2pb.RegisterLogsServer(s, v1a2)
-	}
+	// if serverConfig.LOGS_API {
+	// 	v1alpha2pb.RegisterLogsServer(s, v1a2)
+	// }
 
 	// Allow service reflection - required for grpc_cli ls to work.
 	reflection.Register(s)
@@ -155,14 +155,14 @@ func main() {
 	healthpb.RegisterHealthServer(s, hs)
 
 	// Start prometheus metrics server
-	prometheus.Register(s)
-	http.Handle("/metrics", promhttp.Handler())
-	go func() {
-		log.Infof("Prometheus server listening on: %s", serverConfig.PROMETHEUS_PORT)
-		if err := http.ListenAndServe(":"+serverConfig.PROMETHEUS_PORT, promhttp.Handler()); err != nil {
-			log.Fatalf("Error running Prometheus HTTP handler: %v", err)
-		}
-	}()
+	// prometheus.Register(s)
+	// http.Handle("/metrics", promhttp.Handler())
+	// go func() {
+	// 	log.Infof("Prometheus server listening on: %s", serverConfig.PROMETHEUS_PORT)
+	// 	if err := http.ListenAndServe(":"+serverConfig.PROMETHEUS_PORT, promhttp.Handler()); err != nil {
+	// 		log.Fatalf("Error running Prometheus HTTP handler: %v", err)
+	// 	}
+	// }()
 
 	// Start gRPC server
 	lis, err := net.Listen("tcp", ":"+serverConfig.GRPC_PORT)
