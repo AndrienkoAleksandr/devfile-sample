@@ -182,17 +182,18 @@ func main() {
 		}
 	}
 
-	opts := []grpc.DialOption{grpc.WithTransportCredentials(creds)}
+	// opts := []grpc.DialOption{grpc.WithTransportCredentials(creds)}
 
 	// Register gRPC server endpoint for gRPC gateway
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	mux := runtime.NewServeMux()
-	err = v1alpha2pb.RegisterResultsHandlerFromEndpoint(ctx, mux, ":"+serverConfig.GRPC_PORT, opts)
-	if err != nil {
-		log.Fatal("Error registering gRPC server endpoint: ", err)
-	}
+	// temp...
+	// err = v1alpha2pb.RegisterResultsHandlerFromEndpoint(ctx, mux, ":"+serverConfig.GRPC_PORT, opts)
+	// if err != nil {
+	// 	log.Fatal("Error registering gRPC server endpoint: ", err)
+	// }
 
 	// if serverConfig.LOGS_API {
 	// 	err = v1alpha2pb.RegisterLogsHandlerFromEndpoint(ctx, mux, ":"+serverConfig.GRPC_PORT, opts)
