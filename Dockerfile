@@ -10,7 +10,7 @@ COPY cmd/ cmd/
 COPY proto/ proto/
 COPY pkg/ pkg/
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o api cmd/api/main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod vendor -a -o api cmd/api/main.go
 
 FROM registry.access.redhat.com/ubi9-minimal:9.1.0
 COPY --from=builder /opt/app-root/src/api /usr/local/bin/api

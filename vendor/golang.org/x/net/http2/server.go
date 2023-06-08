@@ -34,7 +34,7 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"math"
+	// "math"
 	"net"
 	"net/http"
 	"net/textproto"
@@ -245,88 +245,88 @@ func (s *serverInternalState) startGracefulShutdown() {
 // The configuration conf may be nil.
 //
 // ConfigureServer must be called before s begins serving.
-func ConfigureServer(s *http.Server, conf *Server) error {
-	if s == nil {
-		panic("nil *http.Server")
-	}
-	if conf == nil {
-		conf = new(Server)
-	}
-	conf.state = &serverInternalState{activeConns: make(map[*serverConn]struct{})}
-	if h1, h2 := s, conf; h2.IdleTimeout == 0 {
-		if h1.IdleTimeout != 0 {
-			h2.IdleTimeout = h1.IdleTimeout
-		} else {
-			h2.IdleTimeout = h1.ReadTimeout
-		}
-	}
-	s.RegisterOnShutdown(conf.state.startGracefulShutdown)
+// func ConfigureServer(s *http.Server, conf *Server) error {
+// 	if s == nil {//
+// 		panic("nil *http.Server")
+// 	}
+// 	if conf == nil {
+// 		conf = new(Server)
+// 	}
+// 	conf.state = &serverInternalState{activeConns: make(map[*serverConn]struct{})}
+// 	if h1, h2 := s, conf; h2.IdleTimeout == 0 {
+// 		if h1.IdleTimeout != 0 {
+// 			h2.IdleTimeout = h1.IdleTimeout
+// 		} else {
+// 			h2.IdleTimeout = h1.ReadTimeout
+// 		}
+// 	}
+// 	s.RegisterOnShutdown(conf.state.startGracefulShutdown)
 
-	if s.TLSConfig == nil {
-		s.TLSConfig = new(tls.Config)
-	} else if s.TLSConfig.CipherSuites != nil && s.TLSConfig.MinVersion < tls.VersionTLS13 {
-		// If they already provided a TLS 1.0–1.2 CipherSuite list, return an
-		// error if it is missing ECDHE_RSA_WITH_AES_128_GCM_SHA256 or
-		// ECDHE_ECDSA_WITH_AES_128_GCM_SHA256.
-		haveRequired := false
-		for _, cs := range s.TLSConfig.CipherSuites {
-			switch cs {
-			case tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-				// Alternative MTI cipher to not discourage ECDSA-only servers.
-				// See http://golang.org/cl/30721 for further information.
-				tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256:
-				haveRequired = true
-			}
-		}
-		if !haveRequired {
-			return fmt.Errorf("http2: TLSConfig.CipherSuites is missing an HTTP/2-required AES_128_GCM_SHA256 cipher (need at least one of TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 or TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256)")
-		}
-	}
+// 	if s.TLSConfig == nil {
+// 		s.TLSConfig = new(tls.Config)
+// 	} else if s.TLSConfig.CipherSuites != nil && s.TLSConfig.MinVersion < tls.VersionTLS13 {
+// 		// If they already provided a TLS 1.0–1.2 CipherSuite list, return an
+// 		// error if it is missing ECDHE_RSA_WITH_AES_128_GCM_SHA256 or
+// 		// ECDHE_ECDSA_WITH_AES_128_GCM_SHA256.
+// 		haveRequired := false
+// 		for _, cs := range s.TLSConfig.CipherSuites {
+// 			switch cs {
+// 			case tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+// 				// Alternative MTI cipher to not discourage ECDSA-only servers.
+// 				// See http://golang.org/cl/30721 for further information.
+// 				tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256:
+// 				haveRequired = true
+// 			}
+// 		}
+// 		if !haveRequired {
+// 			return fmt.Errorf("http2: TLSConfig.CipherSuites is missing an HTTP/2-required AES_128_GCM_SHA256 cipher (need at least one of TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 or TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256)")
+// 		}
+// 	}
 
-	// Note: not setting MinVersion to tls.VersionTLS12,
-	// as we don't want to interfere with HTTP/1.1 traffic
-	// on the user's server. We enforce TLS 1.2 later once
-	// we accept a connection. Ideally this should be done
-	// during next-proto selection, but using TLS <1.2 with
-	// HTTP/2 is still the client's bug.
+// 	// Note: not setting MinVersion to tls.VersionTLS12,
+// 	// as we don't want to interfere with HTTP/1.1 traffic
+// 	// on the user's server. We enforce TLS 1.2 later once
+// 	// we accept a connection. Ideally this should be done
+// 	// during next-proto selection, but using TLS <1.2 with
+// 	// HTTP/2 is still the client's bug.
 
-	s.TLSConfig.PreferServerCipherSuites = true
+// 	s.TLSConfig.PreferServerCipherSuites = true
 
-	if !strSliceContains(s.TLSConfig.NextProtos, NextProtoTLS) {
-		s.TLSConfig.NextProtos = append(s.TLSConfig.NextProtos, NextProtoTLS)
-	}
-	if !strSliceContains(s.TLSConfig.NextProtos, "http/1.1") {
-		s.TLSConfig.NextProtos = append(s.TLSConfig.NextProtos, "http/1.1")
-	}
+// 	if !strSliceContains(s.TLSConfig.NextProtos, NextProtoTLS) {
+// 		s.TLSConfig.NextProtos = append(s.TLSConfig.NextProtos, NextProtoTLS)
+// 	}
+// 	if !strSliceContains(s.TLSConfig.NextProtos, "http/1.1") {
+// 		s.TLSConfig.NextProtos = append(s.TLSConfig.NextProtos, "http/1.1")
+// 	}
 
-	if s.TLSNextProto == nil {
-		s.TLSNextProto = map[string]func(*http.Server, *tls.Conn, http.Handler){}
-	}
-	protoHandler := func(hs *http.Server, c *tls.Conn, h http.Handler) {
-		if testHookOnConn != nil {
-			testHookOnConn()
-		}
-		// The TLSNextProto interface predates contexts, so
-		// the net/http package passes down its per-connection
-		// base context via an exported but unadvertised
-		// method on the Handler. This is for internal
-		// net/http<=>http2 use only.
-		var ctx context.Context
-		type baseContexter interface {
-			BaseContext() context.Context
-		}
-		if bc, ok := h.(baseContexter); ok {
-			ctx = bc.BaseContext()
-		}
-		conf.ServeConn(c, &ServeConnOpts{
-			Context:    ctx,
-			Handler:    h,
-			BaseConfig: hs,
-		})
-	}
-	s.TLSNextProto[NextProtoTLS] = protoHandler
-	return nil
-}
+// 	if s.TLSNextProto == nil {
+// 		s.TLSNextProto = map[string]func(*http.Server, *tls.Conn, http.Handler){}
+// 	}
+// 	protoHandler := func(hs *http.Server, c *tls.Conn, h http.Handler) {
+// 		if testHookOnConn != nil {
+// 			testHookOnConn()
+// 		}
+// 		// The TLSNextProto interface predates contexts, so
+// 		// the net/http package passes down its per-connection
+// 		// base context via an exported but unadvertised
+// 		// method on the Handler. This is for internal
+// 		// net/http<=>http2 use only.
+// 		var ctx context.Context
+// 		type baseContexter interface {
+// 			BaseContext() context.Context
+// 		}
+// 		if bc, ok := h.(baseContexter); ok {
+// 			ctx = bc.BaseContext()
+// 		}
+// 		conf.ServeConn(c, &ServeConnOpts{//
+// 			Context:    ctx,
+// 			Handler:    h,
+// 			BaseConfig: hs,
+// 		})
+// 	}
+// 	s.TLSNextProto[NextProtoTLS] = protoHandler
+// 	return nil
+// }
 
 // ServeConnOpts are options for the Server.ServeConn method.
 type ServeConnOpts struct {
@@ -398,138 +398,138 @@ func (o *ServeConnOpts) handler() http.Handler {
 // implemented in terms of providing a suitably-behaving net.Conn.
 //
 // The opts parameter is optional. If nil, default values are used.
-func (s *Server) ServeConn(c net.Conn, opts *ServeConnOpts) {
-	baseCtx, cancel := serverConnBaseContext(c, opts)
-	defer cancel()
+// func (s *Server) ServeConn(c net.Conn, opts *ServeConnOpts) {//
+// 	baseCtx, cancel := serverConnBaseContext(c, opts)
+// 	defer cancel()
 
-	sc := &serverConn{
-		srv:                         s,
-		hs:                          opts.baseConfig(),
-		conn:                        c,
-		baseCtx:                     baseCtx,
-		remoteAddrStr:               c.RemoteAddr().String(),
-		bw:                          newBufferedWriter(c),
-		handler:                     opts.handler(),
-		streams:                     make(map[uint32]*stream),
-		readFrameCh:                 make(chan readFrameResult),
-		wantWriteFrameCh:            make(chan FrameWriteRequest, 8),
-		serveMsgCh:                  make(chan interface{}, 8),
-		wroteFrameCh:                make(chan frameWriteResult, 1), // buffered; one send in writeFrameAsync
-		bodyReadCh:                  make(chan bodyReadMsg),         // buffering doesn't matter either way
-		doneServing:                 make(chan struct{}),
-		clientMaxStreams:            math.MaxUint32, // Section 6.5.2: "Initially, there is no limit to this value"
-		advMaxStreams:               s.maxConcurrentStreams(),
-		initialStreamSendWindowSize: initialWindowSize,
-		maxFrameSize:                initialMaxFrameSize,
-		serveG:                      newGoroutineLock(),
-		pushEnabled:                 true,
-		sawClientPreface:            opts.SawClientPreface,
-	}
+// 	sc := &serverConn{
+// 		srv:                         s,
+// 		hs:                          opts.baseConfig(),
+// 		conn:                        c,
+// 		baseCtx:                     baseCtx,
+// 		remoteAddrStr:               c.RemoteAddr().String(),
+// 		bw:                          newBufferedWriter(c),
+// 		handler:                     opts.handler(),
+// 		streams:                     make(map[uint32]*stream),
+// 		readFrameCh:                 make(chan readFrameResult),
+// 		wantWriteFrameCh:            make(chan FrameWriteRequest, 8),
+// 		serveMsgCh:                  make(chan interface{}, 8),
+// 		wroteFrameCh:                make(chan frameWriteResult, 1), // buffered; one send in writeFrameAsync
+// 		bodyReadCh:                  make(chan bodyReadMsg),         // buffering doesn't matter either way
+// 		doneServing:                 make(chan struct{}),
+// 		clientMaxStreams:            math.MaxUint32, // Section 6.5.2: "Initially, there is no limit to this value"
+// 		advMaxStreams:               s.maxConcurrentStreams(),
+// 		initialStreamSendWindowSize: initialWindowSize,
+// 		maxFrameSize:                initialMaxFrameSize,
+// 		serveG:                      newGoroutineLock(),
+// 		pushEnabled:                 true,
+// 		sawClientPreface:            opts.SawClientPreface,
+// 	}
 
-	s.state.registerConn(sc)
-	defer s.state.unregisterConn(sc)
+// 	s.state.registerConn(sc)
+// 	defer s.state.unregisterConn(sc)
 
-	// The net/http package sets the write deadline from the
-	// http.Server.WriteTimeout during the TLS handshake, but then
-	// passes the connection off to us with the deadline already set.
-	// Write deadlines are set per stream in serverConn.newStream.
-	// Disarm the net.Conn write deadline here.
-	if sc.hs.WriteTimeout != 0 {
-		sc.conn.SetWriteDeadline(time.Time{})
-	}
+// 	// The net/http package sets the write deadline from the
+// 	// http.Server.WriteTimeout during the TLS handshake, but then
+// 	// passes the connection off to us with the deadline already set.
+// 	// Write deadlines are set per stream in serverConn.newStream.
+// 	// Disarm the net.Conn write deadline here.
+// 	if sc.hs.WriteTimeout != 0 {
+// 		sc.conn.SetWriteDeadline(time.Time{})
+// 	}
 
-	if s.NewWriteScheduler != nil {
-		sc.writeSched = s.NewWriteScheduler()
-	} else {
-		sc.writeSched = NewPriorityWriteScheduler(nil)
-	}
+// 	if s.NewWriteScheduler != nil {
+// 		sc.writeSched = s.NewWriteScheduler()
+// 	} else {
+// 		sc.writeSched = NewPriorityWriteScheduler(nil)
+// 	}
 
-	// These start at the RFC-specified defaults. If there is a higher
-	// configured value for inflow, that will be updated when we send a
-	// WINDOW_UPDATE shortly after sending SETTINGS.
-	sc.flow.add(initialWindowSize)
-	sc.inflow.init(initialWindowSize)
-	sc.hpackEncoder = hpack.NewEncoder(&sc.headerWriteBuf)
-	sc.hpackEncoder.SetMaxDynamicTableSizeLimit(s.maxEncoderHeaderTableSize())
+// 	// These start at the RFC-specified defaults. If there is a higher
+// 	// configured value for inflow, that will be updated when we send a
+// 	// WINDOW_UPDATE shortly after sending SETTINGS.
+// 	sc.flow.add(initialWindowSize)
+// 	sc.inflow.init(initialWindowSize)
+// 	sc.hpackEncoder = hpack.NewEncoder(&sc.headerWriteBuf)
+// 	sc.hpackEncoder.SetMaxDynamicTableSizeLimit(s.maxEncoderHeaderTableSize())
 
-	fr := NewFramer(sc.bw, c)
-	if s.CountError != nil {
-		fr.countError = s.CountError
-	}
-	fr.ReadMetaHeaders = hpack.NewDecoder(s.maxDecoderHeaderTableSize(), nil)
-	fr.MaxHeaderListSize = sc.maxHeaderListSize()
-	fr.SetMaxReadFrameSize(s.maxReadFrameSize())
-	sc.framer = fr
+// 	fr := NewFramer(sc.bw, c)
+// 	if s.CountError != nil {
+// 		fr.countError = s.CountError
+// 	}
+// 	fr.ReadMetaHeaders = hpack.NewDecoder(s.maxDecoderHeaderTableSize(), nil)
+// 	fr.MaxHeaderListSize = sc.maxHeaderListSize()
+// 	fr.SetMaxReadFrameSize(s.maxReadFrameSize())
+// 	sc.framer = fr
 
-	if tc, ok := c.(connectionStater); ok {
-		sc.tlsState = new(tls.ConnectionState)
-		*sc.tlsState = tc.ConnectionState()
-		// 9.2 Use of TLS Features
-		// An implementation of HTTP/2 over TLS MUST use TLS
-		// 1.2 or higher with the restrictions on feature set
-		// and cipher suite described in this section. Due to
-		// implementation limitations, it might not be
-		// possible to fail TLS negotiation. An endpoint MUST
-		// immediately terminate an HTTP/2 connection that
-		// does not meet the TLS requirements described in
-		// this section with a connection error (Section
-		// 5.4.1) of type INADEQUATE_SECURITY.
-		if sc.tlsState.Version < tls.VersionTLS12 {
-			sc.rejectConn(ErrCodeInadequateSecurity, "TLS version too low")
-			return
-		}
+// 	if tc, ok := c.(connectionStater); ok {
+// 		sc.tlsState = new(tls.ConnectionState)
+// 		*sc.tlsState = tc.ConnectionState()
+// 		// 9.2 Use of TLS Features
+// 		// An implementation of HTTP/2 over TLS MUST use TLS
+// 		// 1.2 or higher with the restrictions on feature set
+// 		// and cipher suite described in this section. Due to
+// 		// implementation limitations, it might not be
+// 		// possible to fail TLS negotiation. An endpoint MUST
+// 		// immediately terminate an HTTP/2 connection that
+// 		// does not meet the TLS requirements described in
+// 		// this section with a connection error (Section
+// 		// 5.4.1) of type INADEQUATE_SECURITY.
+// 		if sc.tlsState.Version < tls.VersionTLS12 {
+// 			sc.rejectConn(ErrCodeInadequateSecurity, "TLS version too low")
+// 			return
+// 		}
 
-		if sc.tlsState.ServerName == "" {
-			// Client must use SNI, but we don't enforce that anymore,
-			// since it was causing problems when connecting to bare IP
-			// addresses during development.
-			//
-			// TODO: optionally enforce? Or enforce at the time we receive
-			// a new request, and verify the ServerName matches the :authority?
-			// But that precludes proxy situations, perhaps.
-			//
-			// So for now, do nothing here again.
-		}
+// 		if sc.tlsState.ServerName == "" {
+// 			// Client must use SNI, but we don't enforce that anymore,
+// 			// since it was causing problems when connecting to bare IP
+// 			// addresses during development.
+// 			//
+// 			// TODO: optionally enforce? Or enforce at the time we receive
+// 			// a new request, and verify the ServerName matches the :authority?
+// 			// But that precludes proxy situations, perhaps.
+// 			//
+// 			// So for now, do nothing here again.
+// 		}
 
-		if !s.PermitProhibitedCipherSuites && isBadCipher(sc.tlsState.CipherSuite) {
-			// "Endpoints MAY choose to generate a connection error
-			// (Section 5.4.1) of type INADEQUATE_SECURITY if one of
-			// the prohibited cipher suites are negotiated."
-			//
-			// We choose that. In my opinion, the spec is weak
-			// here. It also says both parties must support at least
-			// TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 so there's no
-			// excuses here. If we really must, we could allow an
-			// "AllowInsecureWeakCiphers" option on the server later.
-			// Let's see how it plays out first.
-			sc.rejectConn(ErrCodeInadequateSecurity, fmt.Sprintf("Prohibited TLS 1.2 Cipher Suite: %x", sc.tlsState.CipherSuite))
-			return
-		}
-	}
+// 		if !s.PermitProhibitedCipherSuites && isBadCipher(sc.tlsState.CipherSuite) {
+// 			// "Endpoints MAY choose to generate a connection error
+// 			// (Section 5.4.1) of type INADEQUATE_SECURITY if one of
+// 			// the prohibited cipher suites are negotiated."
+// 			//
+// 			// We choose that. In my opinion, the spec is weak
+// 			// here. It also says both parties must support at least
+// 			// TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 so there's no
+// 			// excuses here. If we really must, we could allow an
+// 			// "AllowInsecureWeakCiphers" option on the server later.
+// 			// Let's see how it plays out first.
+// 			sc.rejectConn(ErrCodeInadequateSecurity, fmt.Sprintf("Prohibited TLS 1.2 Cipher Suite: %x", sc.tlsState.CipherSuite))
+// 			return
+// 		}
+// 	}
 
-	if opts.Settings != nil {
-		fr := &SettingsFrame{
-			FrameHeader: FrameHeader{valid: true},
-			p:           opts.Settings,
-		}
-		if err := fr.ForeachSetting(sc.processSetting); err != nil {
-			sc.rejectConn(ErrCodeProtocol, "invalid settings")
-			return
-		}
-		opts.Settings = nil
-	}
+// 	if opts.Settings != nil {
+// 		fr := &SettingsFrame{
+// 			FrameHeader: FrameHeader{valid: true},
+// 			p:           opts.Settings,
+// 		}
+// 		if err := fr.ForeachSetting(sc.processSetting); err != nil {
+// 			sc.rejectConn(ErrCodeProtocol, "invalid settings")
+// 			return
+// 		}
+// 		opts.Settings = nil
+// 	}
 
-	if hook := testHookGetServerConn; hook != nil {
-		hook(sc)
-	}
+// 	if hook := testHookGetServerConn; hook != nil {
+// 		hook(sc)
+// 	}
 
-	if opts.UpgradeRequest != nil {
-		sc.upgradeRequest(opts.UpgradeRequest)
-		opts.UpgradeRequest = nil
-	}
+// 	if opts.UpgradeRequest != nil {
+// 		sc.upgradeRequest(opts.UpgradeRequest)
+// 		opts.UpgradeRequest = nil
+// 	}
 
-	sc.serve()
-}
+// 	sc.serve()//
+// }
 
 func serverConnBaseContext(c net.Conn, opts *ServeConnOpts) (ctx context.Context, cancel func()) {
 	ctx, cancel = context.WithCancel(opts.context())
@@ -877,135 +877,136 @@ func (sc *serverConn) notePanic() {
 	}
 }
 
-func (sc *serverConn) serve() {
-	sc.serveG.check()
-	defer sc.notePanic()
-	defer sc.conn.Close()
-	defer sc.closeAllStreamsOnConnClose()
-	defer sc.stopShutdownTimer()
-	defer close(sc.doneServing) // unblocks handlers trying to send
+// func (sc *serverConn) serve() {
+// 	sc.serveG.check()
+// 	defer sc.notePanic()
+// 	defer sc.conn.Close()
+// 	defer sc.closeAllStreamsOnConnClose()
+// 	defer sc.stopShutdownTimer()
+// 	defer close(sc.doneServing) // unblocks handlers trying to send
 
-	if VerboseLogs {
-		sc.vlogf("http2: server connection from %v on %p", sc.conn.RemoteAddr(), sc.hs)
-	}
+// 	if VerboseLogs {
+// 		sc.vlogf("http2: server connection from %v on %p", sc.conn.RemoteAddr(), sc.hs)
+// 	}
 
-	sc.writeFrame(FrameWriteRequest{
-		write: writeSettings{
-			{SettingMaxFrameSize, sc.srv.maxReadFrameSize()},
-			{SettingMaxConcurrentStreams, sc.advMaxStreams},
-			{SettingMaxHeaderListSize, sc.maxHeaderListSize()},
-			{SettingHeaderTableSize, sc.srv.maxDecoderHeaderTableSize()},
-			{SettingInitialWindowSize, uint32(sc.srv.initialStreamRecvWindowSize())},
-		},
-	})
-	sc.unackedSettings++
+// 	sc.writeFrame(FrameWriteRequest{
+// 		write: writeSettings{
+// 			{SettingMaxFrameSize, sc.srv.maxReadFrameSize()},
+// 			{SettingMaxConcurrentStreams, sc.advMaxStreams},
+// 			{SettingMaxHeaderListSize, sc.maxHeaderListSize()},
+// 			{SettingHeaderTableSize, sc.srv.maxDecoderHeaderTableSize()},
+// 			{SettingInitialWindowSize, uint32(sc.srv.initialStreamRecvWindowSize())},
+// 		},
+// 	})
+// 	sc.unackedSettings++
 
-	// Each connection starts with initialWindowSize inflow tokens.
-	// If a higher value is configured, we add more tokens.
-	if diff := sc.srv.initialConnRecvWindowSize() - initialWindowSize; diff > 0 {
-		sc.sendWindowUpdate(nil, int(diff))
-	}
+// 	// Each connection starts with initialWindowSize inflow tokens.
+// 	// If a higher value is configured, we add more tokens.
+// 	if diff := sc.srv.initialConnRecvWindowSize() - initialWindowSize; diff > 0 {
+// 		sc.sendWindowUpdate(nil, int(diff))
+// 	}
 
-	if err := sc.readPreface(); err != nil {
-		sc.condlogf(err, "http2: server: error reading preface from client %v: %v", sc.conn.RemoteAddr(), err)
-		return
-	}
-	// Now that we've got the preface, get us out of the
-	// "StateNew" state. We can't go directly to idle, though.
-	// Active means we read some data and anticipate a request. We'll
-	// do another Active when we get a HEADERS frame.
-	sc.setConnState(http.StateActive)
-	sc.setConnState(http.StateIdle)
+// 	if err := sc.readPreface(); err != nil {
+// 		// 
+// 		sc.condlogf(err, "http2: server: error reading preface from client %v: %v", sc.conn.RemoteAddr(), err)
+// 		return
+// 	}
+// 	// Now that we've got the preface, get us out of the
+// 	// "StateNew" state. We can't go directly to idle, though.
+// 	// Active means we read some data and anticipate a request. We'll
+// 	// do another Active when we get a HEADERS frame.
+// 	sc.setConnState(http.StateActive)
+// 	sc.setConnState(http.StateIdle)
 
-	if sc.srv.IdleTimeout != 0 {
-		sc.idleTimer = time.AfterFunc(sc.srv.IdleTimeout, sc.onIdleTimer)
-		defer sc.idleTimer.Stop()
-	}
+// 	if sc.srv.IdleTimeout != 0 {
+// 		sc.idleTimer = time.AfterFunc(sc.srv.IdleTimeout, sc.onIdleTimer)
+// 		defer sc.idleTimer.Stop()
+// 	}
 
-	go sc.readFrames() // closed by defer sc.conn.Close above
+// 	go sc.readFrames() // closed by defer sc.conn.Close above
 
-	settingsTimer := time.AfterFunc(firstSettingsTimeout, sc.onSettingsTimer)
-	defer settingsTimer.Stop()
+// 	settingsTimer := time.AfterFunc(firstSettingsTimeout, sc.onSettingsTimer)
+// 	defer settingsTimer.Stop()
 
-	loopNum := 0
-	for {
-		loopNum++
-		select {
-		case wr := <-sc.wantWriteFrameCh:
-			if se, ok := wr.write.(StreamError); ok {
-				sc.resetStream(se)
-				break
-			}
-			sc.writeFrame(wr)
-		case res := <-sc.wroteFrameCh:
-			sc.wroteFrame(res)
-		case res := <-sc.readFrameCh:
-			// Process any written frames before reading new frames from the client since a
-			// written frame could have triggered a new stream to be started.
-			if sc.writingFrameAsync {
-				select {
-				case wroteRes := <-sc.wroteFrameCh:
-					sc.wroteFrame(wroteRes)
-				default:
-				}
-			}
-			if !sc.processFrameFromReader(res) {
-				return
-			}
-			res.readMore()
-			if settingsTimer != nil {
-				settingsTimer.Stop()
-				settingsTimer = nil
-			}
-		case m := <-sc.bodyReadCh:
-			sc.noteBodyRead(m.st, m.n)
-		case msg := <-sc.serveMsgCh:
-			switch v := msg.(type) {
-			case func(int):
-				v(loopNum) // for testing
-			case *serverMessage:
-				switch v {
-				case settingsTimerMsg:
-					sc.logf("timeout waiting for SETTINGS frames from %v", sc.conn.RemoteAddr())
-					return
-				case idleTimerMsg:
-					sc.vlogf("connection is idle")
-					sc.goAway(ErrCodeNo)
-				case shutdownTimerMsg:
-					sc.vlogf("GOAWAY close timer fired; closing conn from %v", sc.conn.RemoteAddr())
-					return
-				case gracefulShutdownMsg:
-					sc.startGracefulShutdownInternal()
-				default:
-					panic("unknown timer")
-				}
-			case *startPushRequest:
-				sc.startPush(v)
-			case func(*serverConn):
-				v(sc)
-			default:
-				panic(fmt.Sprintf("unexpected type %T", v))
-			}
-		}
+// 	loopNum := 0
+// 	for {
+// 		loopNum++
+// 		select {
+// 		case wr := <-sc.wantWriteFrameCh:
+// 			if se, ok := wr.write.(StreamError); ok {
+// 				sc.resetStream(se)
+// 				break
+// 			}
+// 			sc.writeFrame(wr)
+// 		case res := <-sc.wroteFrameCh:
+// 			sc.wroteFrame(res)
+// 		case res := <-sc.readFrameCh:
+// 			// Process any written frames before reading new frames from the client since a
+// 			// written frame could have triggered a new stream to be started.
+// 			if sc.writingFrameAsync {
+// 				select {
+// 				case wroteRes := <-sc.wroteFrameCh:
+// 					sc.wroteFrame(wroteRes)
+// 				default:
+// 				}
+// 			}
+// 			if !sc.processFrameFromReader(res) {
+// 				return
+// 			}
+// 			res.readMore()
+// 			if settingsTimer != nil {
+// 				settingsTimer.Stop()
+// 				settingsTimer = nil
+// 			}
+// 		case m := <-sc.bodyReadCh:
+// 			sc.noteBodyRead(m.st, m.n)
+// 		case msg := <-sc.serveMsgCh:
+// 			switch v := msg.(type) {
+// 			case func(int):
+// 				v(loopNum) // for testing
+// 			case *serverMessage:
+// 				switch v {
+// 				case settingsTimerMsg:
+// 					sc.logf("timeout waiting for SETTINGS frames from %v", sc.conn.RemoteAddr())
+// 					return
+// 				case idleTimerMsg:
+// 					sc.vlogf("connection is idle")
+// 					sc.goAway(ErrCodeNo)
+// 				case shutdownTimerMsg:
+// 					sc.vlogf("GOAWAY close timer fired; closing conn from %v", sc.conn.RemoteAddr())
+// 					return
+// 				case gracefulShutdownMsg:
+// 					sc.startGracefulShutdownInternal()
+// 				default:
+// 					panic("unknown timer")
+// 				}
+// 			case *startPushRequest:
+// 				sc.startPush(v)
+// 			case func(*serverConn):
+// 				v(sc)
+// 			default:
+// 				panic(fmt.Sprintf("unexpected type %T", v))
+// 			}
+// 		}
 
-		// If the peer is causing us to generate a lot of control frames,
-		// but not reading them from us, assume they are trying to make us
-		// run out of memory.
-		if sc.queuedControlFrames > sc.srv.maxQueuedControlFrames() {
-			sc.vlogf("http2: too many control frames in send queue, closing connection")
-			return
-		}
+// 		// If the peer is causing us to generate a lot of control frames,
+// 		// but not reading them from us, assume they are trying to make us
+// 		// run out of memory.
+// 		if sc.queuedControlFrames > sc.srv.maxQueuedControlFrames() {
+// 			sc.vlogf("http2: too many control frames in send queue, closing connection")
+// 			return
+// 		}
 
-		// Start the shutdown timer after sending a GOAWAY. When sending GOAWAY
-		// with no error code (graceful shutdown), don't start the timer until
-		// all open streams have been completed.
-		sentGoAway := sc.inGoAway && !sc.needToSendGoAway && !sc.writingFrame
-		gracefulShutdownComplete := sc.goAwayCode == ErrCodeNo && sc.curOpenStreams() == 0
-		if sentGoAway && sc.shutdownTimer == nil && (sc.goAwayCode != ErrCodeNo || gracefulShutdownComplete) {
-			sc.shutDownIn(goAwayTimeout)
-		}
-	}
-}
+// 		// Start the shutdown timer after sending a GOAWAY. When sending GOAWAY
+// 		// with no error code (graceful shutdown), don't start the timer until
+// 		// all open streams have been completed.
+// 		sentGoAway := sc.inGoAway && !sc.needToSendGoAway && !sc.writingFrame
+// 		gracefulShutdownComplete := sc.goAwayCode == ErrCodeNo && sc.curOpenStreams() == 0
+// 		if sentGoAway && sc.shutdownTimer == nil && (sc.goAwayCode != ErrCodeNo || gracefulShutdownComplete) {
+// 			sc.shutDownIn(goAwayTimeout)
+// 		}
+// 	}
+// }
 
 func (sc *serverConn) awaitGracefulShutdown(sharedCh <-chan struct{}, privateCh chan struct{}) {
 	select {
