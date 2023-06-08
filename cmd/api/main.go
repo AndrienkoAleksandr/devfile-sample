@@ -58,7 +58,7 @@ import (
 )
 
 func main() {
-	log.Println("Test3")
+	log.Println("Test4")
 	serverConfig := config.Get()
 
 	log := logger.Get(serverConfig.LOG_LEVEL)
@@ -150,9 +150,9 @@ func main() {
 	// reflection.Register(s)
 
 	// Set up health checks.
-	hs := health.NewServer()
-	hs.SetServingStatus("tekton.results.v1alpha2.Results", healthpb.HealthCheckResponse_SERVING)
-	healthpb.RegisterHealthServer(s, hs)
+	// hs := health.NewServer()
+	// hs.SetServingStatus("tekton.results.v1alpha2.Results", healthpb.HealthCheckResponse_SERVING)
+	// healthpb.RegisterHealthServer(s, hs)
 
 	// Start prometheus metrics server
 	// prometheus.Register(s)
