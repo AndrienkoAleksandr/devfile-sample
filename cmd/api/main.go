@@ -58,7 +58,7 @@ import (
 )
 
 func main() {
-	log.Println("Test4")
+	log.Println("Test5")
 	serverConfig := config.Get()
 
 	log := logger.Get(serverConfig.LOG_LEVEL)
