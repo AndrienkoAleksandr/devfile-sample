@@ -147,7 +147,7 @@ func main() {
 	// }
 
 	// Allow service reflection - required for grpc_cli ls to work.
-	reflection.Register(s)
+	// reflection.Register(s)
 
 	// Set up health checks.
 	hs := health.NewServer()
@@ -194,12 +194,12 @@ func main() {
 		log.Fatal("Error registering gRPC server endpoint: ", err)
 	}
 
-	if serverConfig.LOGS_API {
-		err = v1alpha2pb.RegisterLogsHandlerFromEndpoint(ctx, mux, ":"+serverConfig.GRPC_PORT, opts)
-		if err != nil {
-			log.Fatal("Error registering gRPC server endpoints for log: ", err)
-		}
-	}
+	// if serverConfig.LOGS_API {
+	// 	err = v1alpha2pb.RegisterLogsHandlerFromEndpoint(ctx, mux, ":"+serverConfig.GRPC_PORT, opts)
+	// 	if err != nil {
+	// 		log.Fatal("Error registering gRPC server endpoints for log: ", err)
+	// 	}
+	// }
 
 	// Start REST proxy server
 	log.Infof("REST server Listening on: %s", serverConfig.REST_PORT)
