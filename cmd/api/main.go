@@ -24,8 +24,8 @@ import (
 	"path"
 	// "time"
 
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
+	// "k8s.io/client-go/kubernetes"
+	// "k8s.io/client-go/rest"
 
 	"go.uber.org/zap"
 	// "go.uber.org/zap/zapcore"
@@ -42,7 +42,7 @@ import (
 	"github.com/tektoncd/results/pkg/api/server/config"
 	"github.com/tektoncd/results/pkg/api/server/logger"
 	v1alpha2 "github.com/tektoncd/results/pkg/api/server/v1alpha2"
-	"github.com/tektoncd/results/pkg/api/server/v1alpha2/auth"
+	// "github.com/tektoncd/results/pkg/api/server/v1alpha2/auth"
 	v1alpha2pb "github.com/tektoncd/results/proto/v1alpha2/results_go_proto"
 	_ "go.uber.org/automaxprocs"
 	"google.golang.org/grpc"
@@ -90,26 +90,26 @@ func main() {
 	}
 
 	// Create the authorization authCheck
-	var authCheck auth.Checker
-	if serverConfig.NO_AUTH {
-		log.Warn("Starting server with authorization check disabled - all requests will be allowed by the API server")
-		authCheck = &auth.AllowAll{}
-	} else {
-		log.Info("Starting server with Kubernetes RBAC authorization check enabled")
-		// Create k8s client
-		k8sConfig, err := rest.InClusterConfig()
-		if err != nil {
-			log.Fatal("Error getting kubernetes client config:", err)
-		}
-		k8s, err := kubernetes.NewForConfig(k8sConfig)
-		if err != nil {
-			log.Fatal("Error creating kubernetes clientset:", err)
-		}
-		authCheck = auth.NewRBAC(k8s)
-	}
+	// var authCheck auth.Checker
+	// if serverConfig.NO_AUTH {
+	// 	log.Warn("Starting server with authorization check disabled - all requests will be allowed by the API server")
+	// 	authCheck = &auth.AllowAll{}
+	// } else {
+	// 	log.Info("Starting server with Kubernetes RBAC authorization check enabled")
+	// 	// Create k8s client
+	// 	k8sConfig, err := rest.InClusterConfig()
+	// 	if err != nil {
+	// 		log.Fatal("Error getting kubernetes client config:", err)
+	// 	}
+	// 	k8s, err := kubernetes.NewForConfig(k8sConfig)
+	// 	if err != nil {
+	// 		log.Fatal("Error creating kubernetes clientset:", err)
+	// 	}
+	// 	authCheck = auth.NewRBAC(k8s)
+	// }
 
 	// Register API server(s)
-	v1a2, err := v1alpha2.New(serverConfig, log, db, v1alpha2.WithAuth(authCheck))
+	v1a2, err := v1alpha2.New(serverConfig, log, db)
 	if err != nil {
 		log.Fatalf("Failed to create server: %v", err)
 	}
