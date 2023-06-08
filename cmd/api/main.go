@@ -22,20 +22,20 @@ import (
 	"net"
 	"net/http"
 	"path"
-	"time"
+	// "time"
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
+	// "go.uber.org/zap/zapcore"
 
 	"github.com/golang-jwt/jwt/v4"
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	// grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
-	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
+	// grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
-	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	// grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -115,31 +115,31 @@ func main() {
 	}
 
 	// Shared options for the logger, with a custom gRPC code to log level function.
-	zapOpts := []grpc_zap.Option{
-		grpc_zap.WithDurationField(func(duration time.Duration) zapcore.Field {
-			return zap.Int64("grpc.time_duration_in_ms", duration.Milliseconds())
-		}),
-	}
+	// zapOpts := []grpc_zap.Option{
+	// 	grpc_zap.WithDurationField(func(duration time.Duration) zapcore.Field {
+	// 		return zap.Int64("grpc.time_duration_in_ms", duration.Milliseconds())
+	// 	}),
+	// }
 
 	// Customize logger so it can be passed to the gRPC interceptors
-	grpcLogger := log.Desugar().With(zap.Bool("grpc.auth_disabled", serverConfig.NO_AUTH))
+	// grpcLogger := log.Desugar().With(zap.Bool("grpc.auth_disabled", serverConfig.NO_AUTH))
 
 	s := grpc.NewServer(
 		grpc.Creds(creds),
-		grpc_middleware.WithUnaryServerChain(
-			// The grpc_ctxtags context updater should be before everything else
-			grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-			grpc_zap.UnaryServerInterceptor(grpcLogger, zapOpts...),
-			grpc_auth.UnaryServerInterceptor(determineAuth),
-			prometheus.UnaryServerInterceptor,
-		),
-		grpc_middleware.WithStreamServerChain(
-			// The grpc_ctxtags context updater should be before everything else
-			grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-			grpc_zap.StreamServerInterceptor(grpcLogger, zapOpts...),
-			grpc_auth.StreamServerInterceptor(determineAuth),
-			prometheus.StreamServerInterceptor,
-		),
+		// grpc_middleware.WithUnaryServerChain(
+		// 	// The grpc_ctxtags context updater should be before everything else
+		// 	grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+		// 	grpc_zap.UnaryServerInterceptor(grpcLogger, zapOpts...),
+		// 	grpc_auth.UnaryServerInterceptor(determineAuth),
+		// 	prometheus.UnaryServerInterceptor,
+		// ),
+		// grpc_middleware.WithStreamServerChain(
+		// 	// The grpc_ctxtags context updater should be before everything else
+		// 	grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+		// 	grpc_zap.StreamServerInterceptor(grpcLogger, zapOpts...),
+		// 	grpc_auth.StreamServerInterceptor(determineAuth),
+		// 	prometheus.StreamServerInterceptor,
+		// ),
 	)
 	v1alpha2pb.RegisterResultsServer(s, v1a2)
 	if serverConfig.LOGS_API {
