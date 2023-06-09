@@ -61,6 +61,7 @@ import (
 )
 
 func main() {
+	fmt.Println("Hello 1")
 	serverConfig := config.Get()
 
 	log := logger.Get(serverConfig.LOG_LEVEL)
