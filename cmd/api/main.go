@@ -24,6 +24,7 @@ import (
 	"path"
 	"strings"
 	"time"
+	"log"
 
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -61,7 +62,7 @@ import (
 )
 
 func main() {
-	fmt.Println("Hello 1")
+	log.Println("Hello 1")
 	serverConfig := config.Get()
 
 	log := logger.Get(serverConfig.LOG_LEVEL)
@@ -247,6 +248,7 @@ func determineAuth(ctx context.Context) (context.Context, error) {
 // grpcHandlerFunc forwards the request to gRPC server based on the Content-Type header.
 func grpcHandlerFunc(grpcServer *grpc.Server, httpHandler http.Handler) http.Handler {
 	return h2c.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Println("hmmmmm")
 		if r.ProtoMajor == 2 && strings.HasPrefix(r.Header.Get("Content-Type"), "application/grpc") {
 			grpcServer.ServeHTTP(w, r)
 		} else {
