@@ -22,7 +22,11 @@ import (
 	"net"
 	"net/http"
 	"path"
+	"strings"
 	"time"
+
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -202,9 +206,9 @@ func main() {
 	// Start REST proxy server
 	log.Infof("REST server Listening on: %s", serverConfig.REST_PORT)
 	if tlsError != nil {
-		log.Fatal(http.ListenAndServe(":"+serverConfig.REST_PORT, mux))
+		log.Fatal(http.ListenAndServe(":"+serverConfig.REST_PORT, grpcHandlerFunc(s, mux)))
 	} else {
-		log.Fatal(http.ListenAndServeTLS(":"+serverConfig.REST_PORT, path.Join(serverConfig.TLS_PATH, "tls.crt"), path.Join(serverConfig.TLS_PATH, "tls.key"), mux))
+		log.Fatal(http.ListenAndServeTLS(":"+serverConfig.REST_PORT, path.Join(serverConfig.TLS_PATH, "tls.crt"), path.Join(serverConfig.TLS_PATH, "tls.key"), grpcHandlerFunc(s, mux)))
 	}
 
 }
@@ -237,4 +241,15 @@ func determineAuth(ctx context.Context) (context.Context, error) {
 		)
 	}
 	return ctx, nil
+}
+
+// grpcHandlerFunc forwards the request to gRPC server based on the Content-Type header.
+func grpcHandlerFunc(grpcServer *grpc.Server, httpHandler http.Handler) http.Handler {
+	return h2c.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.ProtoMajor == 2 && strings.HasPrefix(r.Header.Get("Content-Type"), "application/grpc") {
+			grpcServer.ServeHTTP(w, r)
+		} else {
+			httpHandler.ServeHTTP(w, r)
+		}
+	}), &http2.Server{})
 }
